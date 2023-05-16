@@ -14,18 +14,18 @@ Maven
 <dependency>
   <groupId>com.unblu.ua-parser</groupId>
   <artifactId>uap-java</artifactId>
-  <version>1.5.4</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
 Gradle (Kotlin)
 ```gradle
-implementation("com.unblu.ua-parser:uap-java:1.5.4")
+implementation("com.unblu.ua-parser:uap-java:2.0.0")
 ```
 
 SBT
 ```sbt
-"com.unblu.ua-parser" % "uap-java" % "1.5.4"
+"com.unblu.ua-parser" % "uap-java" % "2.0.0"
 ```
 
 Build:
