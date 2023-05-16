@@ -1,0 +1,151 @@
+plugins {
+    id 'java-library'
+    id 'signing'
+    id 'maven-publish'
+    id 'de.marcphilipp.nexus-publish' version '0.4.0'
+    id 'net.researchgate.release' version '3.0.2'
+    id 'io.codearte.nexus-staging' version '0.22.0'
+}
+
+wrapper {
+    gradleVersion = '7.3.3'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    testImplementation 'org.yaml:snakeyaml:2.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.hamcrest:hamcrest-all:1.3'
+}
+
+def testResourcesOutputDir = file("${buildDir}/resources/test/ua_parser")
+task copyTestResourcesFromCore(type: Copy) {
+    destinationDir testResourcesOutputDir
+    from("${projectDir}/uap-core") {
+        include "regexes.yaml"
+    }
+    from("${projectDir}/uap-core/test_resources") {
+        include "*.yaml"
+    }
+    from("${projectDir}/uap-core/tests") {
+        include "*.yaml"
+    }
+}
+sourceSets.test.output.dir testResourcesOutputDir, builtBy: copyTestResourcesFromCore
+
+group = 'com.unblu.ua-parser'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'User Agent Parser for Java'
+                description = 'Java implementation of the UA Parser library. Derives operating system, browser and device metadata from a user-agent string. This library consumes the regular expression rules defined in https://github.com/ua-parser/uap-core.'
+                packaging = 'jar'
+                url = 'https://' + "$githubRepositoryOwner" + '.github.io/' + "$githubRepositoryName" + '/'
+                licenses {
+                    license {
+                        name = 'Apache 2.0 License'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0'
+                    }
+                }
+                developers {
+                    developer {
+                        url = 'https://github.com/orgs/' + "$githubRepositoryOwner" + '/people'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/' + "$githubRepositoryOwner" + '/' + "$githubRepositoryName" + '.git'
+                    developerConnection = 'scm:git:https://github.com/' + "$githubRepositoryOwner" + '/' + "$githubRepositoryName" + '.git'
+                    url = 'https://github.com/' + "$githubRepositoryOwner" + '/' + "$githubRepositoryName" + '/'
+                }
+            }
+            from components.java
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign(publishing.publications)
+}
+
+tasks.withType(Sign) {
+    onlyIf {
+        project.hasProperty('signing.gnupg.keyName')
+    }
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+
+    compileJava.options.encoding = "UTF-8"
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            username = project.findProperty('sonatypeUser') ?: ''
+            password = project.findProperty('sonatypePassword') ?: ''
+        }
+    }
+}
+
+nexusStaging {
+    serverUrl = "https://s01.oss.sonatype.org/service/local/"
+    packageGroup = 'com.unblu'
+    username = project.findProperty('sonatypeUser') ?: ''
+    password = project.findProperty('sonatypePassword') ?: ''
+}
+
+
+release {
+    buildTasks = ['releaseBuild']
+    git {
+        requireBranch.set('master')
+    }
+}
+
+task releaseBuild {
+    dependsOn(
+            'checkLastVersionValue',
+            'clean',
+            'build',
+            'publishToSonatype'
+    )
+}
+
+tasks.register('checkLastVersionValue') {
+    doLast {
+        if(version.endsWith('SNAPSHOT')) {
+            throw new GradleException("version '$version' ends with SNAPSHOT, this is not a release build!")
+        }
+        if(lastVersion != version) {
+            throw new GradleException("lastVersion '$lastVersion' does not match version '$version', fix it in the 'gradle.properties' file.")
+        }
+    }
+}
+
+def updateLastVersionValueTask = tasks.register('updateLastVersionValue') {
+    doLast {
+        def propertiesFile = file('gradle.properties')
+        def content = propertiesFile.text
+        content = content.replaceAll("lastVersion=[0-9\\.]+", "lastVersion=" + version.replace('-SNAPSHOT', ''))
+        propertiesFile.text = content
+    }
+}
+
+model {
+    tasks.unSnapshotVersion {
+        dependsOn updateLastVersionValueTask
+    }
+}

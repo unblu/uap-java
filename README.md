@@ -1,6 +1,9 @@
 ua_parser Java Library
 ======================
 
+> **Note**
+> This project is a fork of [uap-java](https://github.com/ua-parser/uap-java) to get a release based on the work presented in PR [ua-parser/uap-java/#83](https://github.com/ua-parser/uap-java/pull/83).
+
 This is the Java implementation of [ua-parser](https://github.com/ua-parser).
 The implementation uses the shared regex patterns and overrides from [regexes.yaml](https://github.com/ua-parser/uap-core/blob/master/regexes.yaml).
 
@@ -9,7 +12,7 @@ Import Dependency:
 Maven
 ```xml
 <dependency>
-  <groupId>com.github.ua-parser</groupId>
+  <groupId>com.unblu.ua-parser</groupId>
   <artifactId>uap-java</artifactId>
   <version>1.5.4</version>
 </dependency>
@@ -17,12 +20,12 @@ Maven
 
 Gradle (Kotlin)
 ```gradle
-implementation("com.github.ua-parser:uap-java:1.5.4")
+implementation("com.unblu.ua-parser:uap-java:1.5.4")
 ```
 
 SBT
 ```sbt
-"com.github.ua-parser" % "uap-java" % "1.5.4"
+"com.unblu.ua-parser" % "uap-java" % "1.5.4"
 ```
 
 Build:
